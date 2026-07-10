@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Timetable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --ink: #26314a;
+    --ink-soft: #6b7690;
+    --line: #e3e8f2;
+    --blue: #4c6ef5;
+    --blue-dark: #3b5bdb;
+
+    --rose: #f06595; --plum: #9775fa; --mustard: #f7b955;
+    --sky: #4dabf7; --sage: #51cf66; --clay: #ff922b; --teal: #20c997;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Inter", sans-serif;
+  }
+  h1, h2 { font-family: "Poppins", sans-serif; margin: 0; }
+
+  header {
+    background: var(--blue);
+    color: white;
+    padding: 28px 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 26px; }
+  header p { margin: 6px 0 0; opacity: 0.9; font-size: 14px; }
+
+  main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+  }
+
+  .toolbar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 11px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .btn-secondary { background: white; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
+
+  .board-scroll {
+    overflow-x: auto;
+    background: var(--panel);
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 10px rgba(38, 49, 74, 0.06);
+  }
+
+  table { width: 100%; border-collapse: collapse; min-width: 700px; }
+
+  th {
+    background: #eef1fb;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+
+  td.time-col {
+    padding: 12px 14px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    font-size: 13px;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+  }
+
+  td.cell {
+    padding: 8px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+    min-width: 150px;
+  }
+
+  .card {
+    background: #fafbff;
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--sky);
+    border-radius: 8px;
+    padding: 9px 11px;
+  }
+  .card .subject { font-weight: 600; font-size: 13.5px; margin-bottom: 3px; }
+  .card .meta { font-size: 11.5px; color: var(--ink-soft); }
+
+  .tag-rose { border-left-color: var(--rose); }
+  .tag-plum { border-left-color: var(--plum); }
+  .tag-mustard { border-left-color: var(--mustard); }
+  .tag-sky { border-left-color: var(--sky); }
+  .tag-sage { border-left-color: var(--sage); }
+  .tag-clay { border-left-color: var(--clay); }
+  .tag-teal { border-left-color: var(--teal); }
+
+  .legend {
+    margin-top: 22px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 20px;
+  }
+  .legend h2 { font-size: 15px; margin-bottom: 10px; }
+  .legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px 16px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-faculty { color: var(--ink-soft); margin-left: auto; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📅 Weekly Timetable Generator</h1>
+  <p>Click "New Timetable" to generate a fresh weekly schedule</p>
+</header>
+
+<main>
+  <div class="toolbar">
+    <button id="regenerate" class="btn btn-primary">🔄 New Timetable</button>
+    <button id="download-txt" class="btn btn-secondary">⬇ Export TXT</button>
+    <button id="print-view" class="btn btn-secondary">🖨 Print</button>
+  </div>
+
+  <div class="board-scroll">
+    <table id="timetable-board">
+      <thead>
+        <tr>
+          <th>Time</th>
+          {% for day in days %}
+          <th>{{ day }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody id="board-body">
+        {% for slot in slots %}
+        <tr>
+          <td class="time-col">{{ slot }}</td>
+          {% for day in days %}
+          <td class="cell" data-day="{{ day }}"></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <section class="legend">
+    <h2>Subjects & Faculty</h2>
+    <div class="legend-grid">
+      {% for item in legend %}
+      <div class="legend-item">
+        <span class="dot tag-{{ item.tag }}" style="background: currentColor;"></span>
+        <strong>{{ item.subject }}</strong>
+        <span class="legend-faculty">{{ item.faculty }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+
+<script>
+  window.__DAYS__ = {{ days|tojson }};
+</script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
